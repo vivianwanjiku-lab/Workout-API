@@ -29,12 +29,14 @@ with app.app_context():
     db.session.commit()
     print(f'Created {len(exercises)} exercises')
     
-    # Create workouts
+    # Get today's date
     today = datetime.now().date()
+    
+    # Create workouts with dates in the past (not future)
     workouts = [
-        Workout(date=today - timedelta(days=2), duration_minutes=45, notes='Good workout, felt strong'),
-        Workout(date=today - timedelta(days=1), duration_minutes=30, notes='Quick cardio session'),
-        Workout(date=today, duration_minutes=60, notes='Full body workout'),
+        Workout(date=today - timedelta(days=5), duration_minutes=45, notes='Good workout, felt strong'),
+        Workout(date=today - timedelta(days=3), duration_minutes=30, notes='Quick cardio session'),
+        Workout(date=today - timedelta(days=1), duration_minutes=60, notes='Full body workout'),
     ]
     
     db.session.add_all(workouts)
@@ -63,19 +65,30 @@ with app.app_context():
     # Test validations
     print('\nTesting validations...')
     try:
-        invalid_workout = Workout(date=today + timedelta(days=1), duration_minutes=-10)
+        # This should fail (duration negative)
+        invalid_workout = Workout(date=today, duration_minutes=-10)
         db.session.add(invalid_workout)
         db.session.commit()
     except Exception as e:
-        print(f'Validation caught: {e}')
+        print(f'Validation caught (duration negative): {e}')
         db.session.rollback()
     
     try:
-        invalid_exercise = Exercise(name='A', category='Invalid')
+        # This should fail (future date)
+        invalid_workout = Workout(date=today + timedelta(days=1), duration_minutes=30)
+        db.session.add(invalid_workout)
+        db.session.commit()
+    except Exception as e:
+        print(f'Validation caught (future date): {e}')
+        db.session.rollback()
+    
+    try:
+        # This should fail (invalid category)
+        invalid_exercise = Exercise(name='Test', category='Invalid')
         db.session.add(invalid_exercise)
         db.session.commit()
     except Exception as e:
-        print(f'Validation caught: {e}')
+        print(f'Validation caught (invalid category): {e}')
         db.session.rollback()
     
     print('Validation tests completed!')
